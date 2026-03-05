@@ -14,17 +14,17 @@ os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp|fflags;nobuffe
 BUFFER_SECONDS = 15
 FPS = 30
 BUFFER_SIZE = BUFFER_SECONDS * FPS
-COOLDOWN = 5
+COOLDOWN = 5  # segundos
 
 CAMERA_URL = "rtsp://admin:Ffao929310*@192.168.0.12:554/Streaming/Channels/101"
 
 NOME_ARENA = "Salgas Beach"
 NOME_QUADRA = "Quadra 1"
 
-API_UPLOAD = "https://replixesporte-vpcw.onrender.com/upload"
+API_UPLOAD = "https://replixesporte-vpcw.onrender.com/api/upload_video"
 
 # =========================
-# CONVERTER VIDEO COM FFmpeg
+# FUNÇÃO PARA CONVERTER VIDEO PARA H264
 # =========================
 def converter_video_bytes(input_path):
     output_path = input_path.replace("_temp.mp4", ".mp4")
@@ -38,7 +38,7 @@ def converter_video_bytes(input_path):
         "-movflags", "+faststart",
         output_path
     ]
-    resultado = subprocess.run(comando)
+    resultado = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if resultado.returncode == 0 and os.path.exists(output_path):
         with open(output_path, "rb") as f:
             video_bytes = f.read()
@@ -47,27 +47,27 @@ def converter_video_bytes(input_path):
         return video_bytes
     else:
         print("[ERRO] Conversão do vídeo falhou.")
+        print(resultado.stderr.decode())
         return None
 
 # =========================
-# ENVIAR REPLAY PARA FLASK
+# FUNÇÃO PARA ENVIAR VIDEO PARA RENDER
 # =========================
 def enviar_replay(bytes_video, nome_video):
     try:
         files = {"video": (nome_video, bytes_video, "video/mp4")}
         data = {"arena": NOME_ARENA, "quadra": NOME_QUADRA}
-
         response = requests.post(API_UPLOAD, files=files, data=data, timeout=30)
 
         if response.status_code == 200:
-            print("[OK] Replay enviado!")
+            print("[OK] Replay enviado para o servidor!")
         else:
             print(f"[ERRO] Código {response.status_code}: {response.text}")
     except Exception as e:
         print("[ERRO] Upload falhou:", e)
 
 # =========================
-# CONECTAR CAMERA
+# CONECTAR CÂMERA
 # =========================
 def conectar_camera():
     while True:
@@ -88,7 +88,7 @@ cap = conectar_camera()
 buffer = deque(maxlen=BUFFER_SIZE)
 ultimo_salvamento = 0
 
-print("Sistema iniciado. 's' = salvar replay | ESC = sair")
+print("Sistema iniciado. Pressione 's' = salvar replay | ESC = sair")
 
 while True:
     ret, frame = cap.read()
@@ -126,7 +126,7 @@ while True:
             arquivo_bytes = converter_video_bytes(caminho_temp)
             if arquivo_bytes:
                 nome_final = nome_temp.replace("_temp", "")
-                print("Enviando replay...")
+                print("Enviando replay para o servidor...")
                 enviar_replay(arquivo_bytes, nome_final)
             else:
                 print("[ERRO] Não foi possível gerar bytes do vídeo.")

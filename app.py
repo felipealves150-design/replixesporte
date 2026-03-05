@@ -1,13 +1,9 @@
 import os
-import time
-from collections import deque
-from datetime import datetime
-from io import BytesIO
 import subprocess
-import cv2
-
+from io import BytesIO
+from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, request, flash, send_file, jsonify, abort
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
 
@@ -173,7 +169,7 @@ def listar_arenas():
 # UPLOAD DE VÍDEO MANUAL
 # ===============================
 @app.route("/upload", methods=["GET", "POST"])
-#login_required
+@login_required
 def upload_video():
     arenas = Arena.query.order_by(Arena.nome).all()
     quadras = Quadra.query.order_by(Quadra.nome).all()
@@ -206,6 +202,47 @@ def upload_video():
         return redirect(url_for("dashboard"))
 
     return render_template("upload.html", arenas=arenas, quadras=quadras)
+
+# ===============================
+# ROTA API PARA CAPTURA_LOCAL (captura_video.py)
+# ===============================
+@app.route("/api/upload_video", methods=["POST"])
+def api_upload_video():
+    file = request.files.get("video")
+    arena_nome = request.form.get("arena")
+    quadra_nome = request.form.get("quadra")
+
+    if not file or not arena_nome or not quadra_nome:
+        return {"status": "erro", "mensagem": "Envie vídeo, arena e quadra"}, 400
+
+    # Verifica ou cria arena
+    arena = Arena.query.filter_by(nome=arena_nome).first()
+    if not arena:
+        arena = Arena(nome=arena_nome)
+        db.session.add(arena)
+        db.session.commit()
+
+    # Verifica ou cria quadra
+    quadra = Quadra.query.filter_by(nome=quadra_nome, arena_id=arena.id).first()
+    if not quadra:
+        quadra = Quadra(nome=quadra_nome, arena_id=arena.id)
+        db.session.add(quadra)
+        db.session.commit()
+
+    # Salva vídeo no banco
+    nome_arquivo = file.filename
+    arquivo_bytes = file.read()
+
+    novo_video = Video(
+        nome_arquivo=nome_arquivo,
+        arquivo=arquivo_bytes,
+        arena_id=arena.id,
+        quadra_id=quadra.id
+    )
+    db.session.add(novo_video)
+    db.session.commit()
+
+    return {"status": "ok", "mensagem": "Vídeo enviado com sucesso!"}, 200
 
 # ===============================
 # SERVIR VÍDEOS
@@ -249,7 +286,7 @@ def horas_por_quadra_data(quadra_id, data):
     return jsonify([h[0] for h in horas])
 
 # ===============================
-# EXECUTAR
+# EXECUTAR APP
 # ===============================
 if __name__ == "__main__":
     with app.app_context():
