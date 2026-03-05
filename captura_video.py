@@ -51,6 +51,26 @@ def converter_video_bytes(input_path):
         return None
 
 # =========================
+# FUNÇÃO PARA CRIAR ARENA/QUADRA NO SERVIDOR
+# =========================
+def garantir_arena_quadra():
+    try:
+        # Tentativa de envio sem arquivo apenas para criar arena/quadra
+        response = requests.post(
+            API_UPLOAD,
+            files={},  # Nenhum arquivo
+            data={"arena": NOME_ARENA, "quadra": NOME_QUADRA},
+            timeout=10
+        )
+        # Servidor deve retornar erro 400 porque não enviamos vídeo, mas cria arena/quadra se não existirem
+        if response.status_code in [200, 400]:
+            print(f"[INFO] Arena '{NOME_ARENA}' e Quadra '{NOME_QUADRA}' verificadas no servidor.")
+        else:
+            print(f"[ERRO] Falha ao criar/verificar arena/quadra: {response.status_code} {response.text}")
+    except Exception as e:
+        print("[ERRO] Não foi possível verificar arena/quadra:", e)
+
+# =========================
 # FUNÇÃO PARA ENVIAR VIDEO PARA RENDER
 # =========================
 def enviar_replay(bytes_video, nome_video):
@@ -60,7 +80,7 @@ def enviar_replay(bytes_video, nome_video):
         response = requests.post(API_UPLOAD, files=files, data=data, timeout=30)
 
         if response.status_code == 200:
-            print("[OK] Replay enviado para o servidor!")
+            print(f"[OK] Replay '{nome_video}' enviado para o servidor!")
         else:
             print(f"[ERRO] Código {response.status_code}: {response.text}")
     except Exception as e:
@@ -78,67 +98,72 @@ def conectar_camera():
             print("Câmera conectada!")
             print(f"Resolução: {int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))}")
             return cap
-        print("Falha. Tentando novamente em 5s...")
+        print("Falha ao conectar. Tentando novamente em 5s...")
         time.sleep(5)
 
 # =========================
 # SISTEMA PRINCIPAL
 # =========================
-cap = conectar_camera()
-buffer = deque(maxlen=BUFFER_SIZE)
-ultimo_salvamento = 0
+def main():
+    garantir_arena_quadra()
+    cap = conectar_camera()
+    buffer = deque(maxlen=BUFFER_SIZE)
+    ultimo_salvamento = 0
 
-print("Sistema iniciado. Pressione 's' = salvar replay | ESC = sair")
+    print("Sistema iniciado. Pressione 's' = salvar replay | ESC = sair")
 
-while True:
-    ret, frame = cap.read()
-    if not ret or frame is None or frame.size == 0:
-        print("Frame perdido... reconectando")
-        cap.release()
-        time.sleep(1)
-        cap = conectar_camera()
-        continue
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None or frame.size == 0:
+            print("Frame perdido... reconectando")
+            cap.release()
+            time.sleep(1)
+            cap = conectar_camera()
+            continue
 
-    buffer.append(frame)
-    cv2.imshow("Replay System", frame)
-    key = cv2.waitKey(1) & 0xFF
+        buffer.append(frame)
+        cv2.imshow("Replay System", frame)
+        key = cv2.waitKey(1) & 0xFF
 
-    # =========================
-    # SALVAR REPLAY
-    # =========================
-    if key == ord('s'):
-        agora = time.time()
-        if agora - ultimo_salvamento > COOLDOWN:
-            ultimo_salvamento = agora
-            nome_temp = datetime.now().strftime("replay_%H-%M-%S_temp.mp4")
-            os.makedirs("temp", exist_ok=True)
-            caminho_temp = os.path.join("temp", nome_temp)
+        # =========================
+        # SALVAR REPLAY
+        # =========================
+        if key == ord('s'):
+            agora = time.time()
+            if agora - ultimo_salvamento > COOLDOWN:
+                ultimo_salvamento = agora
+                nome_temp = datetime.now().strftime("replay_%H-%M-%S_temp.mp4")
+                os.makedirs("temp", exist_ok=True)
+                caminho_temp = os.path.join("temp", nome_temp)
 
-            height, width, _ = frame.shape
-            out = cv2.VideoWriter(caminho_temp, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (width, height))
-            for f in list(buffer):
-                if f is not None:
-                    out.write(f)
-            out.release()
-            time.sleep(0.1)
+                height, width, _ = frame.shape
+                out = cv2.VideoWriter(caminho_temp, cv2.VideoWriter_fourcc(*'mp4v'), FPS, (width, height))
+                for f in list(buffer):
+                    if f is not None:
+                        out.write(f)
+                out.release()
+                time.sleep(0.1)
 
-            # Converter para H264
-            arquivo_bytes = converter_video_bytes(caminho_temp)
-            if arquivo_bytes:
-                nome_final = nome_temp.replace("_temp", "")
-                print("Enviando replay para o servidor...")
-                enviar_replay(arquivo_bytes, nome_final)
+                # Converter para H264
+                arquivo_bytes = converter_video_bytes(caminho_temp)
+                if arquivo_bytes:
+                    nome_final = nome_temp.replace("_temp", "")
+                    print("Enviando replay para o servidor...")
+                    enviar_replay(arquivo_bytes, nome_final)
+                else:
+                    print("[ERRO] Não foi possível gerar bytes do vídeo.")
             else:
-                print("[ERRO] Não foi possível gerar bytes do vídeo.")
-        else:
-            print("Cooldown ativo. Aguarde...")
+                print("Cooldown ativo. Aguarde...")
 
-    # =========================
-    # SAIR
-    # =========================
-    if key == 27:
-        break
+        # =========================
+        # SAIR
+        # =========================
+        if key == 27:
+            break
 
-cap.release()
-cv2.destroyAllWindows()
-print("Sistema encerrado.")
+    cap.release()
+    cv2.destroyAllWindows()
+    print("Sistema encerrado.")
+
+if __name__ == "__main__":
+    main()
