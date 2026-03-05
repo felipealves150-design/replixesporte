@@ -44,7 +44,6 @@ class Quadra(db.Model):
     nome = db.Column(db.String(150), nullable=False)
 
     arena_id = db.Column(db.Integer, db.ForeignKey("arena.id"), nullable=False)
-
     videos = db.relationship("Video", backref="quadra", lazy=True, cascade="all, delete")
 
     def __repr__(self):
@@ -58,16 +57,16 @@ class Video(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_arquivo = db.Column(db.String(255), nullable=False)
-    arquivo = db.Column(db.LargeBinary, nullable=False)  # novo campo para o vídeo
+    arquivo = db.Column(db.LargeBinary, nullable=False)  # nome correto
     data_upload = db.Column(db.DateTime, default=datetime.utcnow)
     data_expiracao = db.Column(db.DateTime, nullable=False)
 
     arena_id = db.Column(db.Integer, db.ForeignKey("arena.id"), nullable=False)
     quadra_id = db.Column(db.Integer, db.ForeignKey("quadra.id"), nullable=False)
 
-    def __init__(self, nome_arquivo, arquivo_bytes, arena_id, quadra_id):
+    def __init__(self, nome_arquivo, arquivo, arena_id, quadra_id):
         self.nome_arquivo = nome_arquivo
-        self.arquivo = arquivo_bytes
+        self.arquivo = arquivo
         self.arena_id = arena_id
         self.quadra_id = quadra_id
         self.data_upload = datetime.now()

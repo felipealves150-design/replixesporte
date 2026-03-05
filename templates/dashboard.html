@@ -131,9 +131,7 @@ const quadraSelect = document.getElementById("quadraSelect");
 const dataSelect = document.getElementById("dataSelect");
 const horaSelect = document.getElementById("horaSelect");
 
-// ===============================
-// FUNÇÃO: FORMATAR DATAS PARA DD/MM/AAAA
-// ===============================
+// Função para formatar datas para DD/MM/AAAA
 function formatarDatasDropdown(selectElement) {
     for (let i = 0; i < selectElement.options.length; i++) {
         const isoDate = selectElement.options[i].value;
@@ -147,9 +145,7 @@ function formatarDatasDropdown(selectElement) {
 // Formata datas existentes ao carregar a página
 formatarDatasDropdown(dataSelect);
 
-// ===============================
-// EVENTO: AO MUDAR ARENA -> CARREGAR QUADRAS
-// ===============================
+// Carregar Quadras ao selecionar Arena
 arenaSelect.addEventListener("change", function() {
     let arenaId = this.value;
     quadraSelect.innerHTML = '<option value="">Carregando...</option>';
@@ -169,25 +165,12 @@ arenaSelect.addEventListener("change", function() {
                 let opt = document.createElement("option");
                 opt.value = q.id;
                 opt.text = q.nome;
-
-                // Seleciona a quadra previamente escolhida (se houver)
-                if (q.id == {{ quadra_selecionada or 0 }}) {
-                    opt.selected = true;
-                }
-
                 quadraSelect.appendChild(opt);
             });
-
-            // Dispara evento para carregar datas automaticamente
-            if (quadraSelect.value) {
-                quadraSelect.dispatchEvent(new Event("change"));
-            }
         });
 });
 
-// ===============================
-// EVENTO: AO MUDAR QUADRA -> CARREGAR DATAS
-// ===============================
+// Carregar Datas ao selecionar Quadra
 quadraSelect.addEventListener("change", function() {
     let quadraId = this.value;
     dataSelect.innerHTML = '<option value="">Carregando...</option>';
@@ -204,25 +187,15 @@ quadraSelect.addEventListener("change", function() {
             dataSelect.innerHTML = '<option value="">Selecione</option>';
             datas.forEach(d => {
                 let opt = document.createElement("option");
-                opt.value = d; // valor ISO YYYY-MM-DD
-                opt.text = d;  // inicialmente texto ISO
-                if (d == "{{ data_selecionada or '' }}") {
-                    opt.selected = true;
-                }
+                opt.value = d; // value ISO YYYY-MM-DD
+                opt.text = d; // texto inicial
                 dataSelect.appendChild(opt);
             });
             formatarDatasDropdown(dataSelect); // transforma para DD/MM/AAAA
-
-            // Dispara evento para carregar horas automaticamente
-            if (dataSelect.value) {
-                dataSelect.dispatchEvent(new Event("change"));
-            }
         });
 });
 
-// ===============================
-// EVENTO: AO MUDAR DATA -> CARREGAR HORAS
-// ===============================
+// Carregar Horas ao selecionar Data
 dataSelect.addEventListener("change", function() {
     let dataSelecionada = this.value;
     let quadraId = quadraSelect.value;
@@ -241,22 +214,11 @@ dataSelect.addEventListener("change", function() {
                 let opt = document.createElement("option");
                 opt.value = h;
                 opt.text = h;
-                if (h == "{{ hora_selecionada or '' }}") {
-                    opt.selected = true;
-                }
                 horaSelect.appendChild(opt);
             });
         });
 });
-
-// ===============================
-// CARREGAMENTO AUTOMÁTICO AO ABRIR A PÁGINA
-// ===============================
-window.addEventListener("load", function() {
-    if (arenaSelect.value) {
-        arenaSelect.dispatchEvent(new Event("change"));
-    }
-});
 </script>
+
 </body>
 </html>
