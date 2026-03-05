@@ -60,8 +60,7 @@ class Video(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_arquivo = db.Column(db.String(255), nullable=False)
-    arquivo = db.Column(db.LargeBinary, nullable=False)  # nome correto
-    #data_upload = db.Column(db.DateTime, default=datetime.utcnow() - timedelta(hours=3))
+    arquivo = db.Column(db.LargeBinary, nullable=False)
     data_upload = db.Column(db.DateTime, default=lambda: datetime.now(BRASILIA))
     data_expiracao = db.Column(db.DateTime, nullable=False)
 
@@ -73,5 +72,5 @@ class Video(db.Model):
         self.arquivo = arquivo
         self.arena_id = arena_id
         self.quadra_id = quadra_id
-        self.data_upload = datetime.now()
+        self.data_upload = datetime.now(BRASILIA)  # fuso correto
         self.data_expiracao = self.data_upload + timedelta(days=3)
