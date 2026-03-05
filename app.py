@@ -173,7 +173,7 @@ def listar_arenas():
 # UPLOAD DE VÍDEO MANUAL
 # ===============================
 @app.route("/upload", methods=["GET", "POST"])
-@login_required
+#login_required
 def upload_video():
     arenas = Arena.query.order_by(Arena.nome).all()
     quadras = Quadra.query.order_by(Quadra.nome).all()
