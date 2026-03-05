@@ -206,7 +206,7 @@ def upload_video():
 # ===============================
 # ROTA API PARA CAPTURA_LOCAL (captura_video.py)
 # ===============================
-@app.route("/api/upload_video", methods=["POST"])
+@app.route("https://replixesporte-vjm2.onrender.com/api/upload_video", methods=["POST"])
 def api_upload_video():
     file = request.files.get("video")
     arena_nome = request.form.get("arena")

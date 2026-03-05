@@ -21,8 +21,8 @@ CAMERA_URL = "rtsp://admin:Ffao929310*@192.168.0.12:554/Streaming/Channels/101"
 NOME_ARENA = "Salgas Beach"
 NOME_QUADRA = "Quadra 1"
 
-API_UPLOAD = "https://replixesporte-vpcw.onrender.com/api/upload_video"
-
+#API_UPLOAD = "https://replixesporte-vpcw.onrender.com/api/upload_video"
+API_UPLOAD = "https://replixesporte-vjm2.onrender.com/api/upload_video"
 # =========================
 # FUNÇÃO PARA CONVERTER VIDEO PARA H264
 # =========================
