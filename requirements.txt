@@ -1,3 +1,9 @@
+Flask
+flask-login
+flask-sqlalchemy
+gunicorn
+opencv-python-headless
+
 aiobotocore @ file:///C:/miniconda3/conda-bld/aiobotocore_1760994335546/work
 aiodns @ file:///C:/miniconda3/conda-bld/aiodns_1762185075564/work
 aiohappyeyeballs @ file:///C:/b/abs_f806x82huz/croot/aiohappyeyeballs_1755769855628/work
