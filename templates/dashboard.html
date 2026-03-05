@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Replix - Meus Lances</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/m.novo.css') }}">
+</head>
+
+<body class="index-page">
+
+<header id="header" class="header d-flex align-items-center fixed-top">
+  <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+
+    <a href="{{ url_for('home') }}" class="logo d-flex align-items-center">
+      <img src="{{ url_for('static', filename='images/nova_logo.png') }}" alt="">
+      {% if current_user.is_authenticated %}
+        <span class="ms-3 text-white">Olá, {{ current_user.username }}</span>
+      {% endif %}
+    </a>
+
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('logout') }}">Sair</a></li>
+      </ul>
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+
+  </div>
+</header>
+
+<main class="main" style="margin-top:100px;">
+<div class="container py-5">
+<div class="row justify-content-center">
+<div class="col-lg-8">
+
+<div class="card shadow-lg" style="border-radius: 1rem;">
+<div class="card-body p-5">
+
+<h3 class="text-center mb-4">Meus Lances</h3>
+<hr>
+
+<form method="GET" action="{{ url_for('dashboard') }}">
+
+<!-- Select Arena -->
+<div class="mb-3">
+<label class="form-label">Arena</label>
+<select name="arena" id="arenaSelect" class="form-control form-control-lg">
+    <option value="">Selecione</option>
+    {% for arena in arenas %}
+    <option value="{{ arena.id }}" {% if arena_selecionada|int == arena.id %}selected{% endif %}>
+        {{ arena.nome }}
+    </option>
+    {% endfor %}
+</select>
+</div>
+
+<!-- Select Quadra -->
+<div class="mb-3">
+<label class="form-label">Quadra</label>
+<select name="quadra" id="quadraSelect" class="form-control form-control-lg">
+    <option value="">Selecione</option>
+</select>
+</div>
+
+<!-- Select Data -->
+<div class="mb-3">
+<label class="form-label">Data</label>
+<select name="data" id="dataSelect" class="form-control form-control-lg">
+    <option value="">Selecione</option>
+    {% for data in datas_disponiveis %}
+    <option value="{{ data }}" {% if data_selecionada == data %}selected{% endif %}>{{ data }}</option>
+    {% endfor %}
+</select>
+</div>
+
+<!-- Select Hora -->
+<div class="mb-4">
+<label class="form-label">Hora</label>
+<select name="hora" id="horaSelect" class="form-control form-control-lg">
+    <option value="">Selecione</option>
+    {% for hora in horas_disponiveis %}
+    <option value="{{ hora }}" {% if hora_selecionada == hora %}selected{% endif %}>{{ hora }}</option>
+    {% endfor %}
+</select>
+</div>
+
+<button class="btn btn-primary btn-lg w-100" type="submit">Pesquisar</button>
+</form>
+
+<hr class="my-4">
+
+{% if not pesquisou %}
+<div class="alert alert-info text-center">
+Selecione Arena, Quadra, Data e Hora para visualizar seus lances.
+</div>
+{% endif %}
+
+{% if pesquisou %}
+<h4 class="mb-3 text-center">Resultados</h4>
+{% endif %}
+{% for v in videos %}
+    <div style="margin-bottom: 20px;">
+        
+        <p>{{ v.arena.nome }}</p>
+        <p>{{ v.quadra.nome }}</p>
+        <p>{{ v.data_upload.strftime("%d/%m/%Y %H:%M:%S") }}</p>
+        <video width="720" height="500" controls>
+            <source src="{{ url_for('servir_video_html', video_id=v.id) }}" type="video/mp4">
+        </video>
+    </div>
+{% endfor %}
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+const arenaSelect = document.getElementById("arenaSelect");
+const quadraSelect = document.getElementById("quadraSelect");
+const dataSelect = document.getElementById("dataSelect");
+const horaSelect = document.getElementById("horaSelect");
+
+// Função para formatar datas para DD/MM/AAAA
+function formatarDatasDropdown(selectElement) {
+    for (let i = 0; i < selectElement.options.length; i++) {
+        const isoDate = selectElement.options[i].value;
+        if (isoDate) {
+            const partes = isoDate.split('-'); // ['YYYY','MM','DD']
+            selectElement.options[i].text = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    }
+}
+
+// Formata datas existentes ao carregar a página
+formatarDatasDropdown(dataSelect);
+
+// Carregar Quadras ao selecionar Arena
+arenaSelect.addEventListener("change", function() {
+    let arenaId = this.value;
+    quadraSelect.innerHTML = '<option value="">Carregando...</option>';
+    dataSelect.innerHTML = '<option value="">Selecione</option>';
+    horaSelect.innerHTML = '<option value="">Selecione</option>';
+
+    if (!arenaId) {
+        quadraSelect.innerHTML = '<option value="">Selecione</option>';
+        return;
+    }
+
+    fetch("/quadras_por_arena/" + arenaId)
+        .then(res => res.json())
+        .then(data => {
+            quadraSelect.innerHTML = '<option value="">Selecione</option>';
+            data.forEach(q => {
+                let opt = document.createElement("option");
+                opt.value = q.id;
+                opt.text = q.nome;
+                quadraSelect.appendChild(opt);
+            });
+        });
+});
+
+// Carregar Datas ao selecionar Quadra
+quadraSelect.addEventListener("change", function() {
+    let quadraId = this.value;
+    dataSelect.innerHTML = '<option value="">Carregando...</option>';
+    horaSelect.innerHTML = '<option value="">Selecione</option>';
+
+    if (!quadraId) {
+        dataSelect.innerHTML = '<option value="">Selecione</option>';
+        return;
+    }
+
+    fetch("/datas_por_quadra/" + quadraId)
+        .then(res => res.json())
+        .then(datas => {
+            dataSelect.innerHTML = '<option value="">Selecione</option>';
+            datas.forEach(d => {
+                let opt = document.createElement("option");
+                opt.value = d; // value ISO YYYY-MM-DD
+                opt.text = d; // texto inicial
+                dataSelect.appendChild(opt);
+            });
+            formatarDatasDropdown(dataSelect); // transforma para DD/MM/AAAA
+        });
+});
+
+// Carregar Horas ao selecionar Data
+dataSelect.addEventListener("change", function() {
+    let dataSelecionada = this.value;
+    let quadraId = quadraSelect.value;
+    horaSelect.innerHTML = '<option value="">Carregando...</option>';
+
+    if (!dataSelecionada || !quadraId) {
+        horaSelect.innerHTML = '<option value="">Selecione</option>';
+        return;
+    }
+
+    fetch(`/horas_por_quadra_data/${quadraId}/${dataSelecionada}`)
+        .then(res => res.json())
+        .then(horas => {
+            horaSelect.innerHTML = '<option value="">Selecione</option>';
+            horas.forEach(h => {
+                let opt = document.createElement("option");
+                opt.value = h;
+                opt.text = h;
+                horaSelect.appendChild(opt);
+            });
+        });
+});
+</script>
+
+</body>
+</html>
