@@ -3,7 +3,10 @@ from flask_login import UserMixin
 from datetime import datetime, timedelta
 
 db = SQLAlchemy()
+from datetime import datetime
+import pytz
 
+BRASILIA = pytz.timezone("America/Sao_Paulo")
 # =========================
 # USUÁRIOS
 # =========================
@@ -59,7 +62,7 @@ class Video(db.Model):
     nome_arquivo = db.Column(db.String(255), nullable=False)
     arquivo = db.Column(db.LargeBinary, nullable=False)  # nome correto
     #data_upload = db.Column(db.DateTime, default=datetime.utcnow() - timedelta(hours=3))
-    data_upload = db.Column(db.DateTime, default=datetime.now)  # horário local do servidor
+    data_upload = db.Column(db.DateTime, default=lambda: datetime.now(BRASILIA))
     data_expiracao = db.Column(db.DateTime, nullable=False)
 
     arena_id = db.Column(db.Integer, db.ForeignKey("arena.id"), nullable=False)
