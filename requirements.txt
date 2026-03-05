@@ -3,3 +3,4 @@ flask-login
 flask-sqlalchemy
 gunicorn
 opencv-python-headless
+pytz==2023.3
