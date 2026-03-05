@@ -219,14 +219,20 @@ def upload_video():
 # ===============================
 # SERVIR VÍDEOS DO BANCO
 # ===============================
+# ===============================
+# SERVIR VÍDEOS DO BANCO
+# ===============================
 @app.route("/video/<int:video_id>")
 @login_required
 def servir_video_html(video_id):
     video = Video.query.get(video_id)
-    if not video or not video.arquivo:
+    if not video or not video.arquivo_bytes:  # Corrigido: arquivo_bytes
         abort(404)
-    return send_file(BytesIO(video.arquivo), mimetype="video/mp4", download_name=video.nome_arquivo)
-
+    return send_file(
+        BytesIO(video.arquivo_bytes),   # Corrigido: arquivo_bytes
+        mimetype="video/mp4",
+        download_name=video.nome_arquivo
+    )
 # ===============================
 # AJAX: QUADRAS, DATAS E HORAS
 # ===============================
