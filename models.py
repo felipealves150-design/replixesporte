@@ -58,7 +58,7 @@ class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome_arquivo = db.Column(db.String(255), nullable=False)
     arquivo = db.Column(db.LargeBinary, nullable=False)  # nome correto
-    data_upload = db.Column(db.DateTime, default=datetime.utcnow)
+    data_upload = db.Column(db.DateTime, default=datetime.utcnow() - timedelta(hours=3))
     data_expiracao = db.Column(db.DateTime, nullable=False)
 
     arena_id = db.Column(db.Integer, db.ForeignKey("arena.id"), nullable=False)
